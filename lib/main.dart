@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() {
   runApp(const MyApp());
@@ -11,138 +13,169 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        textTheme: const TextTheme(
-          bodyLarge: TextStyle(fontFamily: 'Aqua'),
-          bodyMedium: TextStyle(fontFamily: 'Aqua'),
-          titleLarge: TextStyle(fontFamily: 'Aqua'),
-        ),
-      ),
-      home: TodoApp(),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate, // Tambahkan ini
+      ],
+      supportedLocales: [
+        Locale('en', 'US'),
+        Locale('id', 'ID'),
+      ],
+      home: WorldClockApp(),
     );
   }
 }
 
-class TodoApp extends StatefulWidget {
+class WorldClockApp extends StatefulWidget {
   @override
-  _TodoAppState createState() => _TodoAppState();
+  _WorldClockAppState createState() => _WorldClockAppState();
 }
 
-class _TodoAppState extends State<TodoApp> {
-  final List<Map<String, dynamic>> _tasks = [];
-  final TextEditingController _controller = TextEditingController();
+class _WorldClockAppState extends State<WorldClockApp> {
+  bool isEnglish = true;
 
-  void _addTask() {
-    if (_controller.text.isNotEmpty) {
-      setState(() {
-        _tasks.add({"title": _controller.text, "done": false});
-        _controller.clear();
-      });
+  Map<String, Duration> timeZones = {
+    'Indonesia': Duration(hours: 7),
+    'Amerika': Duration(hours: -5),
+    'Jepang': Duration(hours: 9),
+    'Arab': Duration(hours: 3),
+    'Jerman': Duration(hours: 1),
+  };
+
+  String getFormattedTime(Duration offset) {
+    return DateFormat('HH:mm:ss').format(DateTime.now().toUtc().add(offset));
+  }
+
+  Color getBackgroundColor() {
+    int hour = DateTime.now().hour;
+    if (hour >= 6 && hour < 12) {
+      return Colors.blueAccent; // Pagi
+    } else if (hour >= 12 && hour < 17) {
+      return Colors.orangeAccent; // Sore
+    } else {
+      return Colors.black87; // Malam
     }
   }
 
-  void _toggleTask(int index) {
-    setState(() {
-      _tasks[index]["done"] = !_tasks[index]["done"];
-    });
+  List<Color> getGradientColors() {
+    int hour = DateTime.now().hour;
+    if (hour >= 6 && hour < 12) {
+      return [Colors.blue.shade300, Colors.blue.shade900]; // Pagi
+    } else if (hour >= 12 && hour < 17) {
+      return [Colors.orange.shade300, Colors.orange.shade900]; // Sore
+    } else {
+      return [Colors.black87, Colors.black54]; // Malam
+    }
   }
 
-  void _deleteTask(int index) {
-    setState(() {
-      _tasks.removeAt(index);
-    });
+  String getBackgroundImage() {
+    int hour = DateTime.now().hour;
+
+    if (hour >= 6 && hour < 12) {
+      return 'assets/images/pagi.jpg'; // Pagi (06:00 - 11:59)
+    } else if (hour >= 12 && hour < 18) {
+      return 'assets/images/sore.jpg'; // Sore (12:00 - 17:59)
+    } else {
+      return 'assets/images/malam.jpg'; // Malam (18:00 - 05:59)
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("To-Do List", style: TextStyle(fontFamily: 'Aqua')),
-        backgroundColor: Colors.blueAccent,
-        centerTitle: true,
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    decoration: InputDecoration(
-                      labelText: "Tambahkan tugas",
-                      labelStyle: const TextStyle(fontFamily: 'Aqua'),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      prefixIcon: const Icon(Icons.task),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                ElevatedButton(
-                  onPressed: _addTask,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueAccent,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: const Icon(Icons.add, color: Colors.white),
-                ),
-              ],
+      body: AnimatedContainer(
+        duration: const Duration(seconds: 1),
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image:
+                AssetImage(getBackgroundImage()), // Tambahkan background image
+            fit: BoxFit.cover,
+            colorFilter: ColorFilter.mode(
+              Colors.black.withOpacity(0.3), // Biar gambar nggak terlalu terang
+              BlendMode.darken,
             ),
           ),
-          Expanded(
-            child: _tasks.isEmpty
-                ? const Center(
-                    child: Text(
-                      "Belum ada tugas",
-                      style: TextStyle(
-                          fontSize: 18, fontFamily: 'Aqua', color: Colors.grey),
-                    ),
-                  )
-                : ListView.builder(
-                    itemCount: _tasks.length,
-                    itemBuilder: (context, index) {
-                      return Card(
-                        margin: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 6),
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: ListTile(
-                          leading: Checkbox(
-                            value: _tasks[index]["done"],
-                            onChanged: (value) => _toggleTask(index),
-                          ),
-                          title: Text(
-                            _tasks[index]["title"],
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              fontFamily: 'Aqua',
-                              decoration: _tasks[index]["done"]
-                                  ? TextDecoration.lineThrough
-                                  : null,
-                            ),
-                          ),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete,
-                                color: Colors.redAccent),
-                            onPressed: () => _deleteTask(index),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: getGradientColors(),
           ),
-        ],
+        ),
+        child: Column(
+          children: [
+            const SizedBox(height: 50),
+            Text(
+              isEnglish ? "World Clock" : "Jam Dunia",
+              style: const TextStyle(
+                fontSize: 28,
+                fontFamily: 'Aqua',
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Expanded(
+              child: ListView.builder(
+                itemCount: timeZones.length,
+                itemBuilder: (context, index) {
+                  String country = timeZones.keys.elementAt(index);
+                  return Card(
+                    color: Colors.white.withOpacity(0.2),
+                    margin: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: ListTile(
+                      title: Text(
+                        country,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontFamily: 'Aqua',
+                          color: Colors.white,
+                        ),
+                      ),
+                      subtitle: Text(
+                        getFormattedTime(timeZones[country]!),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontFamily: 'Aqua',
+                          color: Colors.white70,
+                        ),
+                      ),
+                      leading: const Icon(
+                        Icons.access_time,
+                        color: Colors.white,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  isEnglish = !isEnglish;
+                });
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white.withOpacity(0.3),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              ),
+              child: Text(
+                isEnglish ? "Switch to Bahasa" : "Ubah ke English",
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontFamily: 'Aqua',
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            const SizedBox(height: 30),
+          ],
+        ),
       ),
     );
   }
